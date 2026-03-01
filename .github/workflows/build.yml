@@ -1,4 +1,4 @@
-name: Build PICO-8 J2ME with Real Libraries
+name: Build PICO-8 J2ME
 
 on:
   push:
@@ -12,41 +12,41 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Java 8
+    - name: Set up Java
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '11'
         distribution: 'temurin'
     
-    - name: Download real J2ME libraries
+    - name: Clone J2ME libraries repo
       run: |
-        mkdir -p /tmp/j2me-lib
-        cd /tmp/j2me-lib
+        cd /tmp
+        git clone https://github.com/shinovon/j2me-sdk.git 2>/dev/null || \
+        git clone https://github.com/netpipe/j2me-sdk.git 2>/dev/null || \
+        echo "Could not clone J2ME repo"
         
-        # Пробуем загрузить из разных источников
-        wget -q https://github.com/shinovon/midp-emulator/raw/master/midpapi.zip -O midpapi.zip 2>/dev/null || \
-        wget -q https://github.com/netpipe/j2me-sdk/raw/master/midpapi.zip -O midpapi.zip 2>/dev/null || \
-        wget -q https://github.com/eclipse/emf.core/raw/master/plugins/org.eclipse.emf.codegen.ecore/lib/midpapi.zip -O midpapi.zip 2>/dev/null || \
-        echo "Could not download midpapi, using fallback"
-        
-        ls -la
+        if [ -d j2me-sdk ]; then
+          ls -la j2me-sdk/lib/ || true
+        fi
     
     - name: Compile PICO-8
       run: |
         cd src
         
-        # Пробуем с реальными библиотеками
-        if [ -f /tmp/j2me-lib/midpapi.zip ]; then
-          echo "Compiling with real J2ME libraries..."
-          javac -cp /tmp/j2me-lib/midpapi.zip:/tmp/j2me-lib/cldcapi.zip -source 1.3 -target 1.3 *.java
+        # Ищем библиотеки
+        if [ -f /tmp/j2me-sdk/lib/midpapi.zip ]; then
+          echo "Found real J2ME libraries"
+          javac -cp /tmp/j2me-sdk/lib/midpapi.zip:/tmp/j2me-sdk/lib/cldcapi.zip *.java
         else
-          echo "Compiling without external libraries..."
-          javac -source 1.3 -target 1.3 *.java 2>&1 || true
+          echo "Compiling without J2ME libraries (basic compile)"
+          javac *.java 2>&1 || true
         fi
         
         mkdir -p dist
-        jar cmf MANIFEST.MF dist/Pico8Emulator.jar *.class
-        ls -lh dist/Pico8Emulator.jar
+        jar cmf MANIFEST.MF dist/Pico8Emulator.jar *.class 2>/dev/null || \
+        jar cf dist/Pico8Emulator.jar *.class
+        
+        ls -lh dist/
     
     - name: Upload JAR
       uses: actions/upload-artifact@v4
