@@ -9,3 +9,4 @@ public class SimpleMIDlet extends MIDlet {
   }
   public void pauseApp() {}
   public void destroyApp(boolean u) {}
+}
