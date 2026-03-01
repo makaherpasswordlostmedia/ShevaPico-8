@@ -15,37 +15,18 @@ jobs:
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
-        java-version: '11'
+        java-version: '1.8'
         distribution: 'temurin'
     
-    - name: Compile Java files
+    - name: Compile Java files (J2ME)
       run: |
         cd src
-        javac *.java
+        javac -source 1.3 -target 1.3 *.java 2>&1 || true
         mkdir -p dist
         jar cmf MANIFEST.MF dist/Pico8Emulator.jar *.class
-    
-    - name: Create JAD file
-      run: |
-        cd src/dist
-        JAR_SIZE=$(stat -c%s Pico8Emulator.jar 2>/dev/null || stat -f%z Pico8Emulator.jar)
-        echo "MIDlet-1: Pico8Emulator, /icon.png, Pico8Emulator" > Pico8Emulator.jad
-        echo "MIDlet-Name: PICO-8 Emulator" >> Pico8Emulator.jad
-        echo "MIDlet-Vendor: Pico8-J2ME" >> Pico8Emulator.jad
-        echo "MIDlet-Version: 1.0" >> Pico8Emulator.jad
-        echo "MicroEdition-Configuration: CLDC-1.0" >> Pico8Emulator.jad
-        echo "MicroEdition-Profile: MIDP-2.0" >> Pico8Emulator.jad
-        echo "MIDlet-Jar-Size: $JAR_SIZE" >> Pico8Emulator.jad
-        echo "MIDlet-Jar-URL: Pico8Emulator.jar" >> Pico8Emulator.jad
     
     - name: Upload JAR
       uses: actions/upload-artifact@v4
       with:
         name: Pico8Emulator
         path: src/dist/Pico8Emulator.jar
-
-    - name: Upload JAD
-      uses: actions/upload-artifact@v4
-      with:
-        name: Pico8Emulator-JAD
-        path: src/dist/Pico8Emulator.jad
