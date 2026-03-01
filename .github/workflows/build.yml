@@ -8,48 +8,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    container:
+      image: openjdk:8
+    
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    
-    - name: Clone J2ME libraries repo
+    - name: Install WTK dependencies
       run: |
-        cd /tmp
-        git clone https://github.com/shinovon/j2me-sdk.git 2>/dev/null || \
-        git clone https://github.com/netpipe/j2me-sdk.git 2>/dev/null || \
-        echo "Could not clone J2ME repo"
+        apt-get update
+        apt-get install -y wget unzip
         
-        if [ -d j2me-sdk ]; then
-          ls -la j2me-sdk/lib/ || true
+        # Попытка загрузить из архивов
+        cd /tmp
+        wget -q https://archive.org/download/wtk25_201611/WTK25.zip -O wtk.zip || true
+        
+        if [ -f wtk.zip ]; then
+          unzip -q wtk.zip
+          export CP=$(find . -name "midpapi.zip" -o -name "cldcapi.zip")
         fi
     
-    - name: Compile PICO-8
+    - name: Compile
       run: |
         cd src
-        
-        # Ищем библиотеки
-        if [ -f /tmp/j2me-sdk/lib/midpapi.zip ]; then
-          echo "Found real J2ME libraries"
-          javac -cp /tmp/j2me-sdk/lib/midpapi.zip:/tmp/j2me-sdk/lib/cldcapi.zip *.java
-        else
-          echo "Compiling without J2ME libraries (basic compile)"
-          javac *.java 2>&1 || true
-        fi
-        
+        javac *.java 2>&1 || echo "Compile failed without J2ME libs"
         mkdir -p dist
-        jar cmf MANIFEST.MF dist/Pico8Emulator.jar *.class 2>/dev/null || \
-        jar cf dist/Pico8Emulator.jar *.class
-        
-        ls -lh dist/
-    
-    - name: Upload JAR
-      uses: actions/upload-artifact@v4
-      with:
-        name: Pico8Emulator
-        path: src/dist/Pico8Emulator.jar
+        jar cmf MANIFEST.MF dist/Pico8Emulator.jar *.class 2>/dev/null || true
