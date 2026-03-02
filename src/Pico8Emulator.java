@@ -1,13 +1,35 @@
-public class Pico8Emulator {
-    private static Pico8Canvas gameCanvas;
-    public Pico8Emulator() {}
-    public static void main(String[] args) {
-        System.out.println("PICO-8 J2ME Emulator v1.0");
+import javax.microedition.midlet.*;
+import javax.microedition.lcdui.*;
+
+public class Pico8Emulator extends MIDlet {
+  private static Pico8Canvas gameCanvas;
+  private Display display;
+  
+  public Pico8Emulator() {
+    super();
+  }
+  
+  public void startApp() {
+    if (display == null) {
+      display = Display.getDisplay(this);
     }
-    public void startApp() {
-        if (gameCanvas == null) gameCanvas = new Pico8Canvas(this);
-        gameCanvas.start();
+    if (gameCanvas == null) {
+      gameCanvas = new Pico8Canvas(this);
     }
-    public void pauseApp() { if (gameCanvas != null) gameCanvas.pause(); }
-    public void destroyApp(boolean u) { if (gameCanvas != null) gameCanvas.stop(); System.exit(0); }
+    display.setCurrent(gameCanvas);
+    gameCanvas.start();
+  }
+  
+  public void pauseApp() {
+    if (gameCanvas != null) {
+      gameCanvas.pause();
+    }
+  }
+  
+  public void destroyApp(boolean unconditional) {
+    if (gameCanvas != null) {
+      gameCanvas.stop();
+    }
+    notifyDestroyed();
+  }
 }
